@@ -4,10 +4,10 @@ let PIPE_SPEED = 4;
 
 let birds = [];
 let POPULATION_SIZE = 100;
+let birdX = 1200/8;
 
-let GRAVITY = 0.3;
+let GRAVITY = 0.3;  
 
-let score = 0;
 
 function setup() {
     createCanvas(1200, 600);
@@ -31,13 +31,17 @@ function draw() {
     rect(pipes[closestPipe()].x, pipes[closestPipe()].bottom, pipes[closestPipe()].width, height - (pipes[closestPipe()].top - 150));
     noFill();
 
-    for (let i = 0; i < POPULATION_SIZE; i++) {
+    for (let i = 0; i <= birds.length - 1; i++) {
         birds[i].show();
         //bird.think();
-        if (birds[i].think() > 0.5) {
+        output = birds[i].think();
+        if (output[0] > output[1]) {
             birds[i].applyForce();
         }
-        birds[i].move();
+        if (birds[i].alive == true) {
+            birds[i].score = frameCount;
+            birds[i].move();
+        }
     }
 
     for (let j = 0; j < pipePopulation; j++) {
@@ -45,18 +49,7 @@ function draw() {
         pipes[j].move();
     }
 
-    var hit = false;
-    var hit1 = false;
-    //var score = 0;
 
-    for (var k = 0; k < pipePopulation; k++) {
-        hit = collideRectCircle(pipes[k].x, 0, pipes[k].width, pipes[k].top, birds[k].x, birds[k].y, birds[k].diameter);
-        hit1 = collideRectCircle(pipes[k].x, pipes[k].bottom, pipes[k].width, height - (this.top - 150), birds[k].x, birds[k].y, birds[k].diameter);
-
-        if (hit || hit1) {
-            //noLoop();
-        }
-    }
 
     //console.log(score);
     // rectMode(CENTER);
@@ -76,12 +69,14 @@ function draw() {
 
 class Bird {
     constructor() {
-        this.x = width / 8;
+        this.x = birdX;
         this.y = height / 2;
         this.acceleration = GRAVITY;
         this.velocity = 0;
         this.diameter = 35;
-        this.brain = new NeuralNetwork(5, 10, 1);
+        this.brain = new NeuralNetwork(5, 10, 2);
+        this.alive = true;
+        this.score;
 
     }
 
@@ -98,11 +93,11 @@ class Bird {
         // inputs[4] = pipes.x;
         //let closestPipe = pipes.closestX();
 
-        inputs[0] = this.y/height;
+        inputs[0] = this.y / height;
         inputs[1] = this.velocity;
-        inputs[2] = pipes[closestPipe()].x/width;
-        inputs[3] = pipes[closestPipe()].top/height;
-        inputs[4] = pipes[closestPipe()].bottom/height;
+        inputs[2] = pipes[closestPipe()].x / width;
+        inputs[3] = pipes[closestPipe()].top / height;
+        inputs[4] = pipes[closestPipe()].bottom / height;
 
         let outputs = this.brain.predict(inputs);
 
@@ -136,6 +131,9 @@ class Bird {
             }
             this.y += this.velocity;
         }
+
+
+
     }
 }
 
@@ -164,6 +162,8 @@ class Pipe {
     }
 
     show() {
+        stroke(255);
+        fill(255,50);
         rect(this.x, 0, this.width, this.top);
         rect(this.x, this.bottom, this.width, height - (this.top - 150));
     }
@@ -171,8 +171,7 @@ class Pipe {
     move() {
         this.x -= PIPE_SPEED;
 
-        if (this.x < birds[0].x - (this.width * 1.5) && this.passed == false) {
-            score++;
+        if (this.x < birdX - (this.width * 1.5) && this.passed == false) {
             this.passed = true;
         }
 
@@ -181,6 +180,21 @@ class Pipe {
             this.top = floor((Math.random() * (0.8 - 0.2) + 0.2) * height);
             this.bottom = this.top + 150;
             this.passed = false;
+        }
+
+
+        var hit = false;
+        var hit1 = false;
+
+        for (var k = birds.length - 1; k >= 0; k--) {
+            hit = collideRectCircle(this.x, 0, this.width, this.top, birds[k].x, birds[k].y, birds[k].diameter);
+            hit1 = collideRectCircle(this.x, this.bottom, this.width, height - (this.top - 150), birds[k].x, birds[k].y, birds[k].diameter);
+
+            if (hit || hit1) {
+                birds[k].alive = false;
+                birds.splice(k, 1);
+                console.log("debug");
+            }
         }
     }
 
