@@ -72,8 +72,13 @@ class Bird {
     }
 
     move() {
-        if (this.y >= height || this.y <= 0) {
-            noLoop();
+        if (this.y > height) {
+            this.y = height;
+            this.velocity = 0;
+        }
+        else if(this.y < 0){
+            this.y = 0;
+            this.velocity = 0;
         }
         else {
             if (this.velocity > 25) {
